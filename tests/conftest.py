@@ -2,6 +2,10 @@ import pytest
 import torch
 from transformers import GPT2Config, GPT2LMHeadModel
 
+# Tiny CPU models: a few threads is fastest. On containers (e.g. RunPod) torch can see every host core and
+# oversubscribe the CPUs it is actually allowed, making these tests crawl.
+torch.set_num_threads(min(4, torch.get_num_threads()))
+
 VOCAB = 50
 EOS = VOCAB - 1
 PAD = EOS

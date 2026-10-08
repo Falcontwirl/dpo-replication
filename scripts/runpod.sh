@@ -15,6 +15,8 @@ esac
 
 # Keep model/dataset downloads on the persistent volume too.
 export HF_HOME="${HF_HOME:-/workspace/hf_cache}"
+# Containers often report all host cores while allowing only a few; cap CPU threads to avoid oversubscription.
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-$(( $(nproc) < 8 ? $(nproc) : 8 ))}"
 PY="${PY:-python}"
 
 case "${1:-}" in
