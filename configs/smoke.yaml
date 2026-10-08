@@ -1,0 +1,58 @@
+# Tiny end-to-end run for the Mac / CPU. Layer on top of base.yaml:
+#   --config configs/base.yaml --config configs/smoke.yaml
+# Writes to separate directories so smoke artifacts never mix with real results.
+
+paths:
+  runs_dir: runs_smoke
+  data_dir: data_smoke
+  results_dir: results_smoke
+
+models:
+  policy: gpt2
+
+generation:
+  max_new_tokens: 24
+
+sft:
+  n_reviews: 256
+  max_len: 64
+  batch_size: 16
+  micro_batch_size: 8
+  warmup_steps: 2
+
+prefs:
+  n_prefixes: 96
+  gen_batch_size: 32
+  score_batch_size: 64
+
+rm:
+  epochs: 1
+  batch_size: 16
+  micro_batch_size: 8
+  warmup_steps: 2
+  val_frac: 0.15
+  eval_every: 10
+  norm_samples: 64
+
+dpo:
+  batch_size: 16
+  micro_batch_size: 8
+  warmup_steps: 5
+  epochs: 1
+  eval_every: 10
+
+ppo:
+  rollout_batch_size: 64
+  gen_batch_size: 32
+  minibatch_size: 16
+  micro_batch_size: 8
+  ppo_epochs: 2
+  total_ppo_steps: 6
+  eval_every: 2
+
+ppo_tune:
+  total_ppo_steps: 4
+
+eval:
+  n_prompts: 32
+  batch_size: 16

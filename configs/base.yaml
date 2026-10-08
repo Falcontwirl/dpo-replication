@@ -1,0 +1,98 @@
+# Full-scale config (cloud NVIDIA GPU). Values marked [paper] come from the paper; everything else is
+# our choice for something the paper leaves unspecified, and is logged in deviations.md (U-rows).
+
+seed: 0
+device: auto            # cuda > mps > cpu
+precision: bf16         # bf16 autocast on CUDA with fp32 weights; ignored on mps/cpu (fp32)
+
+paths:
+  runs_dir: runs
+  data_dir: data
+  results_dir: results
+
+models:
+  policy: gpt2-large                                   # [paper]
+  gt_reward: siebert/sentiment-roberta-large-english  # [paper]
+
+prefix:
+  min_tokens: 2         # [paper] prefixes of length 2-8 tokens
+  max_tokens: 8
+
+generation:             # used for preference-data sampling and for evaluation (U3, U8)
+  max_new_tokens: 48
+  temperature: 1.0
+  top_k: 0
+  top_p: 1.0
+
+sft:                    # U1
+  n_reviews: 20000      # "a subset of the IMDB data"
+  max_len: 128
+  epochs: 1             # [paper]
+  batch_size: 32
+  micro_batch_size: 8
+  lr: 1.0e-5
+  warmup_steps: 50
+  weight_decay: 0.0
+
+prefs:
+  n_prefixes: 25000     # [paper]
+  n_samples: 4          # [paper] -> 6 pairs per prefix
+  gen_batch_size: 64    # prefixes per sampling batch (x n_samples sequences)
+  score_batch_size: 128
+
+rm:                     # U5
+  epochs: 3             # [paper]
+  batch_size: 64
+  micro_batch_size: 16
+  lr: 1.0e-5
+  warmup_steps: 100
+  val_frac: 0.05        # split by prefix, so no prompt appears in both train and val
+  eval_every: 500       # steps; also evaluated at the end of every epoch
+  norm_samples: 4096    # SFT samples used to set E[r] = 0
+
+dpo:
+  beta: 0.1             # [paper] default; the sentiment sweep overrides it
+  batch_size: 64        # [paper]
+  micro_batch_size: 16
+  optimizer: rmsprop    # [paper]
+  lr: 1.0e-6            # [paper]
+  warmup_steps: 150     # [paper]
+  epochs: 2             # U7/U10: fixed budget, no early stopping
+  max_grad_norm: null   # no clipping (paper does not mention any)
+  eval_every: 100       # [paper]
+
+ppo:                    # U6
+  reward: rm            # rm | gt
+  target_kl: 6.0        # [paper] sweep {3, 6, 9, 12}
+  init_kl_coef: 0.2
+  kl_horizon: 10000
+  rollout_batch_size: 1024   # [paper] samples per PPO step
+  gen_batch_size: 128
+  minibatch_size: 64
+  micro_batch_size: 16
+  ppo_epochs: 4
+  lr: 1.0e-6           # placeholder; the sweep replaces it with the ppo_tune winner (D8, U14)
+  value_head_lr: 1.0e-4
+  vf_coef: 0.1
+  clip_range: 0.2
+  clip_range_value: 0.2
+  gamma: 1.0
+  lam: 0.95
+  whiten_scores: true   # our reading of "normalized rewards"
+  max_grad_norm: 1.0
+  total_ppo_steps: 150  # ~154k rollouts
+  eval_every: 5         # PPO steps (~5k rollouts, comparable to DPO's 100 steps x 64 pairs)
+
+ppo_tune:               # U14: lr selection for PPO, run before the main PPO / PPO-GT sweep
+  lrs: [1.0e-6, 3.0e-6, 1.0e-5]
+  reward: gt            # tune on PPO-GT; the winning lr is used for both PPO and PPO-GT
+  target_kl: 6.0        # middle of the paper's {3, 6, 9, 12}
+  total_ppo_steps: 50   # shorter than the main runs' 150 to save compute
+  eval_split: unsupervised  # IMDb's 50k unlabeled reviews: disjoint from train and from the test prompts
+  select_kl: 6.0        # metric: best eval reward reached at KL <= select_kl; ties -> lower lr
+
+eval:                   # U8
+  n_prompts: 512
+  split: test
+  batch_size: 64
+  seed: 1234            # fixed prompts and sampling seed for every eval of every run

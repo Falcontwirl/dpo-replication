@@ -1,0 +1,26 @@
+# Full experiment, in order. 06_sweep.py skips any entry whose `done` marker already exists, so it can be
+# re-launched after an interruption. Paper sweep: DPO beta {0.05, 0.1, 1, 5}; PPO target KL {3, 6, 9, 12}.
+# PPO lr is tuned first (deviations.md U14) and substituted for @ppo_lr in every PPO / PPO-GT run.
+
+runs:
+  - {name: sft, script: scripts/01_sft.py}
+  - {name: prefs, script: scripts/02_gen_prefs.py, done: "{data_dir}/prefs_meta.json"}
+  - {name: rm, script: scripts/03_train_rm.py}
+
+  - {name: dpo_beta0.05, script: scripts/04_train_dpo.py, set: [dpo.beta=0.05]}
+  - {name: dpo_beta0.1,  script: scripts/04_train_dpo.py, set: [dpo.beta=0.1]}
+  - {name: dpo_beta1,    script: scripts/04_train_dpo.py, set: [dpo.beta=1.0]}
+  - {name: dpo_beta5,    script: scripts/04_train_dpo.py, set: [dpo.beta=5.0]}
+
+  - {name: ppo_lr_tune, expand: ppo_lr_tune}
+  - {name: ppo_lr_select, script: scripts/05b_select_ppo_lr.py, done: "{runs_dir}/ppo_lr_choice.json"}
+
+  - {name: ppo_kl3,  script: scripts/05_train_ppo.py, set: [ppo.reward=rm, ppo.target_kl=3, ppo.lr=@ppo_lr]}
+  - {name: ppo_kl6,  script: scripts/05_train_ppo.py, set: [ppo.reward=rm, ppo.target_kl=6, ppo.lr=@ppo_lr]}
+  - {name: ppo_kl9,  script: scripts/05_train_ppo.py, set: [ppo.reward=rm, ppo.target_kl=9, ppo.lr=@ppo_lr]}
+  - {name: ppo_kl12, script: scripts/05_train_ppo.py, set: [ppo.reward=rm, ppo.target_kl=12, ppo.lr=@ppo_lr]}
+
+  - {name: ppo_gt_kl3,  script: scripts/05_train_ppo.py, set: [ppo.reward=gt, ppo.target_kl=3, ppo.lr=@ppo_lr]}
+  - {name: ppo_gt_kl6,  script: scripts/05_train_ppo.py, set: [ppo.reward=gt, ppo.target_kl=6, ppo.lr=@ppo_lr]}
+  - {name: ppo_gt_kl9,  script: scripts/05_train_ppo.py, set: [ppo.reward=gt, ppo.target_kl=9, ppo.lr=@ppo_lr]}
+  - {name: ppo_gt_kl12, script: scripts/05_train_ppo.py, set: [ppo.reward=gt, ppo.target_kl=12, ppo.lr=@ppo_lr]}
