@@ -25,6 +25,7 @@ configs/base.yaml     full-scale config (cloud GPU); [paper] values are tagged, 
 configs/smoke.yaml    tiny overrides (gpt2-small, ~100 prefixes); writes to runs_smoke/ data_smoke/ results_smoke/
 configs/sweep.yaml    the full experiment in order: sft -> prefs -> rm -> 4 DPO -> PPO lr tuning (3 runs) + selection
                       -> 4 PPO + 4 PPO-GT runs using the selected lr (deviations.md U14)
+                      -> 3 fill-in runs off the paper's grid: DPO beta 0.3, PPO / PPO-GT target KL 1.5 (deviations.md D9)
 src/dpo_rep/          library: config, utils (timing/logging), modeling (log-probs, value head, RM), sampling
                       (own KV-cache sampler), kl, losses (DPO/BT/PPO/GAE), data, gt_reward, evaluate, ppo, analysis
 scripts/01..07        stages: sft, gen_prefs, train_rm, train_dpo, train_ppo, 05b select_ppo_lr, sweep, analyze

@@ -24,3 +24,8 @@ runs:
   - {name: ppo_gt_kl6,  script: scripts/05_train_ppo.py, set: [ppo.reward=gt, ppo.target_kl=6, ppo.lr=@ppo_lr]}
   - {name: ppo_gt_kl9,  script: scripts/05_train_ppo.py, set: [ppo.reward=gt, ppo.target_kl=9, ppo.lr=@ppo_lr]}
   - {name: ppo_gt_kl12, script: scripts/05_train_ppo.py, set: [ppo.reward=gt, ppo.target_kl=12, ppo.lr=@ppo_lr]}
+
+  # Fill-in runs off the paper's grid, added after the main sweep (deviations.md D9).
+  - {name: dpo_beta0.3,  script: scripts/04_train_dpo.py, set: [dpo.beta=0.3]}
+  - {name: ppo_kl1.5,    script: scripts/05_train_ppo.py, set: [ppo.reward=rm, ppo.target_kl=1.5, ppo.lr=@ppo_lr]}
+  - {name: ppo_gt_kl1.5, script: scripts/05_train_ppo.py, set: [ppo.reward=gt, ppo.target_kl=1.5, ppo.lr=@ppo_lr]}
